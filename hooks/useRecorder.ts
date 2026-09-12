@@ -1,0 +1,7 @@
+'use client';
+import { useRef, useState } from 'react';
+export function useRecorder(){ const [stream,setStream]=useState<MediaStream|null>(null),[recording,setRecording]=useState(false),[error,setError]=useState(''),[seconds,setSeconds]=useState(0); const rec=useRef<MediaRecorder|null>(null), chunks=useRef<Blob[]>([]), timer=useRef<ReturnType<typeof setInterval>|null>(null);
+ const enable=async()=>{try{const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});setStream(s);setError('')}catch{setError('دسترسی به دوربین یا میکروفون ممکن نیست. از HTTPS یا localhost استفاده کنید.')}};
+ const start=()=>{if(!stream)return; const type=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(MediaRecorder.isTypeSupported); chunks.current=[]; rec.current=new MediaRecorder(stream,type?{mimeType:type}:undefined); rec.current.ondataavailable=e=>chunks.current.push(e.data); rec.current.start();setRecording(true);setSeconds(0);timer.current=setInterval(()=>setSeconds(s=>s+1),1000)};
+ const stop=()=>{if(!rec.current)return; rec.current.onstop=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks.current,{type:rec.current?.mimeType||'video/webm'}));a.download='teleprompter-recording.webm';a.click()};rec.current.stop();setRecording(false);if(timer.current)clearInterval(timer.current)};
+ return {stream,recording,error,seconds,enable,start,stop}; }
